@@ -61,3 +61,28 @@ p {
         }
     }
 }
+
+.note {
+    border-left: 3px solid #ffa759;
+    padding: 0.75em 1em;
+    background-color: rgba(255, 167, 89, 0.06);
+    margin-bottom: 1.5em;
+
+    &::before {
+        content: "NOTE";
+        display: block;
+        font-size: 0.7em;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        color: #ffa759;
+        margin-bottom: 0.5em;
+    }
+
+    p:first-child {
+        margin-top: 0;
+    }
+
+    p:last-child {
+        margin-bottom: 0;
+    }
+}

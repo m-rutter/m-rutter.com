@@ -1,6 +1,6 @@
 +++
 title = "Typesafe Function Overloading in TypeScript"
-description = "Common frustrations with no easy solution"
+description = "Spoilers: you can't"
 date = "2023-03-19"
 draft = false
 [taxonomies]
@@ -10,19 +10,21 @@ tags = ["typescript", "programming", "types", "java", "type-level-programming"]
 When helping developers new to TypeScript, I encounter several common patterns
 of frustration. Two broad categories:
 
-- Type 1: Users get frustrated that certain JavaScript patterns are hard to
+- Category 1: Users get frustrated that certain JavaScript patterns are hard to
   express safely in TypeScript. This typically involves runtime reflection,
-  which I won't discuss today and is usually an issue for less experienced or
-  stubborn users (sometimes legitimately!).
-- Type 2: Users understand TypeScript features in isolation but get confused
+  which I won't discuss today - it's usually a sign of fighting against the type
+  system rather than working with it (though not always!).
+- Category 2: Users understand TypeScript features in isolation but get confused
   combining them in seemingly natural ways that don't work as expected. Often
-  this is simply because the feature combination hasn't been implemented.
+  this is because the feature combination isn't supported. Sometimes a missing
+  feature waiting to be added, but often a fundamental trade-off in how the
+  language works.
 
-We'll focus on a type 2 problem: function overloading and conditional types in
-TypeScript. This is an area many find unsatisfactory and I've seen attempted
-countless times. The intersection of these features comes up often in the
-TypeScript Discord and at work. The goal is type safety, but the result is
-confusing compiler errors.
+We'll focus on a Category 2 problem: function overloading and conditional types
+in TypeScript. The intersection of these features comes up often enough that
+I've seen it attempted countless times, both in the TypeScript Discord and on
+teams I've worked with. The goal is type safety, but the result is confusing
+compiler errors.
 
 <!-- more -->
 
@@ -49,25 +51,25 @@ type Tethera = { type: "yan"; value: string } | { type: "tan"; value2: number };
 declare const tethera: Tethera;
 
 // using control flow narrowing to access the correct fields
-if (t.type === "yan") {
+if (tethera.type === "yan") {
   // ok
-  t.value.toLowerCase();
+  tethera.value.toLowerCase();
 
   // property 'value2' does not exist on type '{ type: "yan"; value: string; }'
-  t.value2.toString();
+  tethera.value2.toString();
 }
 ```
 
 In the example above, `YanTan` is a union type that can either be a string
-literal type `"tan"` or an object named `Yan`. The `Tethera` type is a union of
-two different object types, distinguished by their common `type` property. This
-latter example is typically called a discriminated union in TypeScript, and
-elsewhere might be called tagged unions, disjoint unions, or sum types.
-TypeScript uses the language's control flow constructs to "narrow" union types,
-as demonstrated with the value `tethera` above.
+literal type `"tan"` or an object of type [Yan][6]. The `Tethera` type is a
+union of two different object types, distinguished by their common `type`
+property. This latter example is typically called a discriminated union in
+TypeScript, and elsewhere might be called tagged unions, disjoint unions, or sum
+types. TypeScript uses the language's control flow constructs to "narrow" union
+types, as demonstrated with the value `tethera` above.
 
 For more on narrowing, the TypeScript [handbook chapter on narrowing][1] is a
-must read for new users:
+must read for new users.
 
 ### Generics
 
@@ -101,7 +103,7 @@ type annotations.
 
 Conditional types in TypeScript allow you to create new types based on type
 level conditions. They are a powerful way to express complex type relationships
-by giving you a form of control flow in type level expressions of the language.
+by giving you a form of control flow in type-level expressions of the language.
 As an ordinary TypeScript user, it is not a feature you will often need to use
 and in fact, you may never have need to use it. However, it is a feature that
 powers a lot of the more clever forms of type inference and type checking that
@@ -119,8 +121,12 @@ In this example, `Yan` evaluates to the literal boolean type `true` because
 type `"1"` does not extend the `number` literal `1`. Numbers are numbers, and
 strings are not numbers.
 
+{% note() %} These evaluate immediately because the types are concrete -
+TypeScript can resolve them at definition time. Hold onto that thought.
+{% end %}
+
 ```ts
-// a type level function that takes a single type as an argument
+// a type-level function that takes a single type as an argument
 // and returns either the type `true` or the type `false`
 type Printable<T> = T extends string ? true : false;
 
@@ -129,15 +135,14 @@ type P = Printable<{ bar: string }>;
 ```
 
 `P` evaluates to `false` because the object type `{ bar: string }` is not a
-`string`. The `Printable` type is effectively a type level function that takes a
+`string`. The `Printable` type is effectively a type-level function that takes a
 single type as an argument and returns another type. As you can see, this is a
-very powerful feature and is a large part of why what is often called the "type
-level language" of TypeScript in many ways effectively its own small functional
-programming language.
+powerful feature. It's a large part of why TypeScript's type system is often
+described as a small functional programming language in its own right.
 
-Enough about preliminaries, time to get to the meat of the matter.
+Enough background - on to the actual problem.
 
-## TypeScript function overloads are not type safe
+## TypeScript function overloads don't verify the implementation
 
 TypeScript supports a form of overloaded functions, which is a common feature in
 many languages that allows you to implement multiple related functions with a
@@ -183,11 +188,11 @@ class Scanner {
 ```
 
 The Java `Scanner` class has two implementations of `addToken`; one that takes a
-single argument and another that takes two. Depending upon the arity (number of
-arguments) and argument types, one of the two implementations is selected. The
-convenience of this feature is that it groups implementations that conceptually
-do the same thing, and saves defining separate names like `addToken` and
-`addTokenWithLiteral` for all of the possible variants:
+single argument and another that takes two. Depending upon the arity and
+argument types, one of the two implementations is selected. The convenience of
+this feature is that it groups implementations that conceptually do the same
+thing, and saves defining separate names like `addToken` and
+`addTokenWithLiteral` for all of the possible variants.
 
 JavaScript does not have function overloads in the sense that Java does, and by
 extension TypeScript also lacks function overloads in the conventional sense. At
@@ -210,11 +215,10 @@ function addToken(token: TokenType, literal?: any): void {
 With TypeScript function overloads, we define multiple signatures, but only
 implement a single function that must be compatible with all of the
 non-implementing signatures. A frustration with this form of overloads is that
-the type checker only enforces the signature of the implementing function, and
-does not enforce that the implementing function satisfies all of the overloads.
-In short, function overloads are not type safe. They were designed primarily to
-help describe existing behavior of JavaScript APIs rather than help you
-implement new ones.
+TypeScript only checks that the implementing signature is compatible with each
+overload - it does not verify that the function body actually satisfies each
+overload individually. They were designed primarily to help describe existing
+behavior of JavaScript APIs rather than help you implement new ones.
 
 For example, below has an implementing function that will fail to return the
 correct value as indicated by the overload signatures. TypeScript will select
@@ -227,7 +231,7 @@ function yan(tan: string, tethera: number): string;
 function yan(tan: number, tethera: string): number;
 
 // the implementation signature must handle both cases from above,
-// however, the return type of the implementation is not checked against the signatures above
+// however, the function body is not verified against individual overload signatures
 function yan(tan: string | number, tethera: string | number): string | number {
   // This implementing function body always returns a string,
   // which is incorrect for the second overload signature
@@ -248,45 +252,45 @@ function signature that does check our work? After surveying the features of
 unions and control flow based narrowing, conditional types, and generics, many
 users of the language construct something along these lines:
 
-[Playground link][2]
-
 ```ts
-// This is a type level function and a conditional type that maps
+// This is a type-level function and a conditional type that maps
 // a string literal to a corresponding type
 type PrimitiveMap<T extends "yan" | "tan"> = T extends "yan" ? string : number;
 
 // This generic function accepts a string literal as an input and returns
-// the corresponding mapped from our function `PrimitiveMap`
+// the corresponding type mapped from our function `PrimitiveMap`
 declare function getValue<T extends "yan" | "tan">(key: T): PrimitiveMap<T>;
 
 const stringValue = getValue("yan"); // Expected return type: string
 const numberValue = getValue("tan"); // Expected return type: number
 ```
 
+[Playground link][2]
+
+{% note() %} `declare` marks an
+[ambient declaration](https://www.typescriptlang.org/docs/handbook/declaration-files/by-example.html) -
+a signature without a function body. {% end %}
+
 Well this looks very promising! If you inspect the values of `stringValue` and
 `numberValue` we get completely different return types from the same function
 depending upon the input value, and they all appear to be correct. This looks a
 lot like TypeScript function overloading!
 
-As with the previous examples, we have a single implementing function. However,
-this function takes a single argument `T` that is a generic with the constraint
-of `"yan" | "tan"`. That generic value is passed into a type level function
-called `PrimitiveMap` as the return type of the function. This conditional type
-will pick the appropriately matching return type given the input argument. It
-would appear that we have successfully recreated TypeScript function overloading
-using other features of the language.
+This function has a type parameter `T` constrained to `"yan" | "tan"`, which is
+used as the type of the single argument `key`. That type parameter is passed
+into a type-level function called `PrimitiveMap` as the return type of the
+function. This conditional type will pick the appropriately matching return type
+given the input argument. It would appear that we have successfully recreated
+TypeScript function overloading using other features of the language.
 
 This is the point of frustration for users because when they turn to
 implementing the function, they find that they cannot implement its body. The
-only way we could implement the body of getAction is if we assert that the
-return value is `PrimitiveMap<T>`. Asserting this defeats the entire purpose of
-this exercise, which was to create a type-safe overload.
+only way we could implement the body of getValue is if we assert that the return
+value is `PrimitiveMap<T>`. Asserting this defeats the entire purpose of this
+exercise, which was to create a type-safe overload.
 
 ```ts
-// Now we attempt to implement the getValue function
-function getValueImplementation<T extends "yan" | "tan">(
-  key: T,
-): PrimitiveMap<T> {
+function getValue<T extends "yan" | "tan">(key: T): PrimitiveMap<T> {
   if (key === "yan") {
     const yanValue: string = "Yan value";
     return yanValue; // Type 'string' is not assignable to type 'PrimitiveMap<T>'
@@ -297,17 +301,35 @@ function getValueImplementation<T extends "yan" | "tan">(
     return tanValue; // Type 'number' is not assignable to type 'PrimitiveMap<T>'
   }
 
+  // T is constrained to two values, but TypeScript can't prove exhaustiveness
+  // inside a generic body - without this, the function has a missing return error
   throw new Error("Not implemented");
 }
 ```
 
+[Playground link][3]
+
+{% note() %} **Did you catch that `throw` at the end?** Even though `T` is
+constrained to exactly `"yan" | "tan"`, TypeScript still requires it because it
+cannot prove all cases are covered inside a generic body. This is itself a
+symptom of the same underlying problem. {% end %}
+
 The stumbling block here is in the presence of generic types. As of today,
 evaluation of conditional types is deferred until the generic value is resolved,
 which only happens when the function is called. The conditional return type of
-`getValueImplementation` will only be evaluated when the function is called and
-not when the function body is being implemented.
+`getValue` will only be evaluated when the function is called and not when the
+function body is being implemented.
 
-In TypeScript you cannot evaluate a conditional type level function like
+This isn't an accident. Inside the function body, `T` is still just a
+placeholder - TypeScript doesn't know what it will be yet. In this example `T`
+happens to be constrained to just two values, but TypeScript doesn't make
+exceptions for small search spaces - in general a generic can be instantiated
+with anything, and the deferral rule applies uniformly. Waiting until the call
+site, where `T` is a real concrete type, is by design - reasoning about all
+possible instantiations of `T` inside a generic body is both complex and
+expensive.
+
+In TypeScript, you cannot evaluate a conditional type-level function like
 `PrimitiveMap` if you give it a generic argument because of this fact. A simple
 illustration of this limitation can be seen below. Despite the fact that `T` has
 a constraint that it extends `string`, the conditional type remains unevaluated
@@ -334,12 +356,18 @@ help from the compiler.
 
 Take a step back. Reconsider the problem the Java case was trying to solve. They
 had separate implementations with a common name, which isn't a feature of
-JavaScript. As I suggested earlier, the alternative in the Java case is to
-simply have different names for each implementation. So the solution is staring
-right at us. Have separately named function implementations for each of your
-"overloads."
+JavaScript. The alternative is simply to have different names for each
+implementation. So the solution is staring right at us. Have separately named
+function implementations for each of your "overloads."
 
 ```ts
+interface Yan {
+  /* ... */
+}
+interface Tan {
+  /* ... */
+}
+
 function createYan(): Yan {
   //...
 }
@@ -364,21 +392,31 @@ overloaded signatures. This will be in the form of extensive testing. This is a
 corner of the language where you aren't going to get much compiler help, but it
 might be a worthwhile sacrifice for your users.
 
-Additionally, you could make use of [runtime assertions][3] or [type guards][4]
+Additionally, you could make use of [runtime assertions][4] or [type guards][5]
 to pass the function arguments to more specialized functions like in solution 1
 example.
 
-So in conclusion, I have only partial solutions to the problem of implementing
-typesafe function overloads in TypeScript. So yeah... sorry about that! However,
-the more important point was it's clear to see why someone might think combining
-these features might work and maybe in future versions of TypeScript it might,
-though I suspect it might not be a priority and might incur performance or
-complexity costs for implementors and users of conditional types.
+So while I only have partial solutions here, I think the more important takeaway
+is understanding _why_ the obvious combination doesn't work. Deferred
+conditional type evaluation isn't a gap in the language - it's a deliberate
+trade-off, and knowing that saves you from chasing a dead end. Once it clicks,
+the decision becomes straightforward: do you need the unified API surface enough
+to own the testing burden yourself, or can you just have two functions? Most of
+the time, two functions is the right answer anyway.
+
+## Further reading
+
+- [Conditional types deferred on generic types][7] - the open TypeScript issue
+  tracking this limitation.
 
 [1]: https://www.typescriptlang.org/docs/handbook/2/narrowing.html
 [2]:
   https://www.typescriptlang.org/play?ssl=9&ssc=1&pln=23&pc=2#code/PTAEBUAsEsGdTqAhqALgTwA4FNQBtsA3bPUAMwFcA7AY1WgHsrkqATZUGp16eppUhhxpISVKAC2STPBSxUAJ2hUA5vl7YFAtAw5cFC7LEzdlaodgBQF0AAUlE3tGIBZaQB5wobAA9U2NngAInQkKiDQAB9QINQwoIA+UABeCG8-ANZg0PDQAH5QeSVVUAAuUCoKCQAjTQBuS0sQCBh4FQDNaBpyajpGZiQaGmxMVFlCxTN1fy1SJFlmZUwKcTD2Q1QKBSp4VEhcfUNjUxKpTBx2MgUGCVAGLZ7aPmYAA3toKXpXaRfLVmwaHgkIZHn0mKB2qgAGoCCjYTzpfyBGI5CLRWLxBIACgA1th0OVwABKcrvRxfbBuTCeBINSxcHbiIpmGF4OEpCHYaGw7BYkLxIl1UDNACiPhwdGw6y5W2YFnKzNU9KY8gqVVqClZ7NSkK1vIx4UFwrAYol-mlm22aCw2HKlRqmkazQAcgwAO6gN24MT+CSjHQIP0ECQBcR7XC6nmg56WShPfqc7ls7AASSD2BDVDizwRviRWRR8SiMTi4WxeIJEBJdgcTm+1PASQA3pZQAgyKBcfiUslUvzDaAW222wzVTk9QrJiU+wBNMKgQg8oINYegDay0DjnlC5rgG2gADkipUB4Q8CoDFWsFg0BUVCQ1QIAZsB7JdcpHkbB9boAAvo022gDsu3QHs+1LIIiUHH8RxVMMwgnNUHQUDkABYACYV2HdcrVLPUdzAPdhAPe0NVPRALyvG87wfJ9UF0F83wpKkaW-Nt-x-PZrg9KhsA9EUDAYBQ+VdcQPkwYNQylSCGl-IA
 [3]:
-  https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#assertion-functions
+  https://www.typescriptlang.org/play/?#code/C4TwDgpgBACgTgSwLYOAgbhAsgQzAHgBUoIAPYCAOwBMBnKAIhB0oagB9HgWGA+KALxRiZCjXpMeUAPxRawRJQDmUAFxRKAVyQAjCHADcAKCMAzTZQDGaAPaUoSiMABqOADaaIREuSp1GzKwcXDy8ABQA1hAg6oQAlOrwyKgY2HhE-ADeRlBQCKZQkdGCAkKSrHFQ2bm5lnbyUIGuHhDq8ooqZQCaLFDo7p4MxjVQcE6acPZNAxAGUAD088Lg0ADk7QjKq3n0lDbAUDi0tAhKlDg6btDANlCgkFCrSShomLgEhLyrOVAAvia5fKFKIgEplbgVKo-Wr1A4Q5qedRaXT6QRQAAsACZhjUxsAJvZ4TM5otlg9Vsi9HBtghdvtDsdTudLtdbvc1s8Um90p9vrl-j9gAALOA2ADuGggEoAonBRXAwgwAHL05BgK5IKgUagMOLGf5AA
 [4]:
+  https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#assertion-functions
+[5]:
   https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates
+[6]: https://en.wikipedia.org/wiki/Yan_tan_tethera
+[7]: https://github.com/microsoft/TypeScript/issues/33014
