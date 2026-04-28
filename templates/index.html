@@ -3,7 +3,7 @@
 {{ section.content | safe }}
 <div class="posts">
   {% for page in paginator.pages %}
-  <article class="post">
+  <a href="{{ page.permalink }}" class="post">
     <header class="post-header">
       <p class="post-meta">
         <time datetime="{{ page.date }}"
@@ -11,12 +11,10 @@
         >
         · {{ page.reading_time }} min read
       </p>
-      <a href="{{ page.permalink }}">
-        <h2>{{ page.title }}</h2>
-      </a>
+      <h2>{{ page.title }}</h2>
       <p class="post-description">{{ page.description }}</p>
     </header>
-  </article>
+  </a>
   {% endfor %}
 </div>
 <nav class="pagination">

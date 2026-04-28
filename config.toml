@@ -11,7 +11,7 @@ generate_robots_txt = true
 feed_limit = 20
 
 taxonomies = [
-    { name = "tags", paginate_by = 5 }, # 5 items per page for a term
+    { name = "tags", paginate_by = 20 }, # 5 items per page for a term
 ]
 
 [extra]
