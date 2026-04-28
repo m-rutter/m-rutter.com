@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png" />
+
+    <title>
+  Some Michael Rutter => Typesafe Function Overloading in TypeScript
+</title>
+    
+<meta name="description" content="Spoilers: you can&#x27;t" />
+<meta property="og:title" content="Typesafe Function Overloading in TypeScript" />
+<meta property="og:description" content="Spoilers: you can&#x27;t" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https:&#x2F;&#x2F;m-rutter.com&#x2F;conditional-types-and-overloading&#x2F;" />
+<meta property="og:site_name" content="Some Michael Rutter" />
+
+  </head>
+  <body class="wrapper">
+    <nav class="nav-header">
+      <p class="header-title mono">
+        <a href="/"> <span class="accent">Some</span>(Michael Rutter) => </a>
+      </p>
+
+      <ul class="nav-links">
+        <li>
+          <a
+            class=""
+            href="/"
+            >blog</a
+          >
+        </li>
+        <li>
+          <a
+            class=""
+            href="/about/"
+            >about</a
+          >
+        </li>
+        <li>
+          <a
+            class=""
+            href="/tags/"
+            >tags</a
+          >
+        </li>
+      </ul>
+    </nav>
+
+    <main class="main">
+<article>
+  <header class="post-header post-header--article">
+    <h1>Typesafe Function Overloading in TypeScript</h1>
+    <p class="post-description">Spoilers: you can&#x27;t</p>
+    <section class="post-meta">
+      <dl class="slab">
+        <dt>Reading time</dt>
+        <dd>11 minutes</dd>
+      </dl>
+
+      <dl class="slab">
+        <dt>Published</dt>
+        <dd>
+          <time datetime="2023-03-19"
+            >19 Mar 2023</time
+          >
+        </dd>
+      </dl>
+      
+    </section>
+    
+    <p class="post-tags">
+      
+      <a href="/tags/typescript/" class="tag">#typescript</a>
+      
+      <a href="/tags/programming/" class="tag">#programming</a>
+      
+      <a href="/tags/types/" class="tag">#types</a>
+      
+      <a href="/tags/type-level-programming/" class="tag">#type-level-programming</a>
+      
+    </p>
+    
+  </header>
+  <section class="prose"><p>When helping developers new to TypeScript, I encounter several common patterns
+of frustration. Two broad categories:</p>
+<ul>
+<li>Category 1: Users get frustrated that certain JavaScript patterns are hard to
+express safely in TypeScript. This typically involves runtime reflection,
+which I won't discuss today - it's usually a sign of fighting against the type
+system rather than working with it (though not always!).</li>
+<li>Category 2: Users understand TypeScript features in isolation but get confused
+combining them in seemingly natural ways that don't work as expected. Often
+this is because the feature combination isn't supported. Sometimes a missing
+feature waiting to be added, but often a fundamental trade-off in how the
+language works.</li>
+</ul>
+<p>We'll focus on a Category 2 problem: function overloading and conditional types
+in TypeScript. The intersection of these features comes up often enough that
+I've seen it attempted countless times, both in the TypeScript Discord and on
+teams I've worked with. The goal is type safety, but the result is confusing
+compiler errors.</p>
+<span id="continue-reading"></span><h2 id="some-prerequisites">Some prerequisites</h2>
+<p>Before we jump in, let's have a quick refresher on three TypeScript features:
+union types, generics, and conditional types.</p>
+<h3 id="union-types">Union types</h3>
+<p>Union types in TypeScript allow you to define a type which can be one of several
+types.</p>
+<pre class="giallo" style="color: #BFBDB6; background-color: #0D1017;"><code data-lang="typescript"><span class="giallo-l"><span style="color: #FF8F40;">interface</span><span style="color: #59C2FF;"> Yan</span><span> {</span></span>
+<span class="giallo-l"><span>  tan</span><span style="color: #F29668;">:</span><span style="color: #39BAE6;"> string</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"><span>}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF8F40;">type</span><span style="color: #59C2FF;"> YanTan</span><span style="color: #F29668;"> =</span><span style="color: #59C2FF;"> Yan</span><span style="color: #F29668;"> |</span><span style="color: #AAD94C;"> &quot;tan&quot;</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF8F40;">type</span><span style="color: #59C2FF;"> Tethera</span><span style="color: #F29668;"> =</span><span> { type</span><span style="color: #F29668;">:</span><span style="color: #AAD94C;"> &quot;yan&quot;</span><span style="color: #BFBDB6B3;">;</span><span> value</span><span style="color: #F29668;">:</span><span style="color: #39BAE6;"> string</span><span> }</span><span style="color: #F29668;"> |</span><span> { type</span><span style="color: #F29668;">:</span><span style="color: #AAD94C;"> &quot;tan&quot;</span><span style="color: #BFBDB6B3;">;</span><span> value2</span><span style="color: #F29668;">:</span><span style="color: #39BAE6;"> number</span><span> }</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF8F40;">declare const</span><span> tethera</span><span style="color: #F29668;">:</span><span style="color: #59C2FF;"> Tethera</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">// using control flow narrowing to access the correct fields</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">if</span><span> (tethera</span><span style="color: #F29668;">.</span><span>type</span><span style="color: #F29668;"> ===</span><span style="color: #AAD94C;"> &quot;yan&quot;</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">  // ok</span></span>
+<span class="giallo-l"><span>  tethera</span><span style="color: #F29668;">.</span><span>value</span><span style="color: #F29668;">.</span><span style="color: #FFB454;">toLowerCase</span><span>()</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">  // property &#39;value2&#39; does not exist on type &#39;{ type: &quot;yan&quot;; value: string; }&#39;</span></span>
+<span class="giallo-l"><span>  tethera</span><span style="color: #F29668;">.</span><span>value2</span><span style="color: #F29668;">.</span><span style="color: #FFB454;">toString</span><span>()</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p>In the example above, <code>YanTan</code> is a union type that can either be a string
+literal type <code>"tan"</code> or an object of type Yan. The <code>Tethera</code> type is a union of
+two different object types, distinguished by their common <code>type</code> property. This
+latter example is typically called a discriminated union in TypeScript, and
+elsewhere might be called tagged unions, disjoint unions, or sum types.
+TypeScript uses the language's control flow constructs to "narrow" union types,
+as demonstrated with the value <code>tethera</code> above.</p>
+<p>For more on narrowing, the TypeScript <a rel="external" href="https://www.typescriptlang.org/docs/handbook/2/narrowing.html">handbook chapter on narrowing</a> is a
+must read for new users.</p>
+<h3 id="generics">Generics</h3>
+<p>Generics in TypeScript provide a way to define reusable code that can work with
+multiple types. They allow you to create functions or types that can operate on
+those different types while preserving type information of the inputs in their
+outputs.</p>
+<pre class="giallo" style="color: #BFBDB6; background-color: #0D1017;"><code data-lang="typescript"><span class="giallo-l"><span style="color: #FF8F40;">function</span><span style="color: #FFB454;"> map</span><span>&lt;</span><span style="color: #59C2FF;">T</span><span style="color: #BFBDB6B3;">,</span><span style="color: #59C2FF;"> U</span><span>&gt;(</span><span style="color: #D2A6FF;">arr</span><span style="color: #F29668;">:</span><span style="color: #59C2FF;"> T</span><span>[]</span><span style="color: #BFBDB6B3;">,</span><span style="color: #FFB454;"> callback</span><span style="color: #F29668;">:</span><span> (</span><span style="color: #D2A6FF;">t</span><span style="color: #F29668;">:</span><span style="color: #59C2FF;"> T</span><span>)</span><span style="color: #FF8F40;"> =&gt;</span><span style="color: #59C2FF;"> U</span><span>)</span><span style="color: #F29668;">:</span><span style="color: #59C2FF;"> U</span><span>[] {</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">  // ...</span></span>
+<span class="giallo-l"><span>}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF8F40;">const</span><span> yan</span><span style="color: #F29668;"> =</span><span style="color: #FFB454;"> map</span><span>(</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">  //    ^? const yan: string[]</span></span>
+<span class="giallo-l"><span>  [</span><span style="color: #D2A6FF;">2</span><span style="color: #BFBDB6B3;">,</span><span style="color: #AAD94C;"> &quot;&quot;</span><span>]</span><span style="color: #BFBDB6B3;">,</span></span>
+<span class="giallo-l"><span>  (</span><span style="color: #D2A6FF;">value</span><span>)</span><span style="color: #FF8F40;"> =&gt;</span><span> value</span><span style="color: #F29668;">.</span><span style="color: #FFB454;">toString</span><span>()</span><span style="color: #BFBDB6B3;">,</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">  //  ^? (parameter) value: number | string</span></span>
+<span class="giallo-l"><span>)</span><span style="color: #BFBDB6B3;">;</span></span></code></pre>
+<p>In this example, the <code>map</code> function takes an array of type <code>T</code> and a callback
+that maps elements of type <code>T</code> to a different type <code>U</code>. The result is an array
+of type <code>U</code>. This is basically the function signature of <code>Array.prototype.map</code>.
+In our <code>yan</code> example, we are mapping an array of <code>number</code> and <code>string</code> to an
+array of <code>string</code>, and at each step of the way TypeScript is able to infer the
+types of the input and output of the callback function without any additional
+type annotations.</p>
+<h3 id="conditional-types">Conditional Types</h3>
+<p>Conditional types in TypeScript allow you to create new types based on type
+level conditions. They are a powerful way to express complex type relationships
+by giving you a form of control flow in type-level expressions of the language.
+As an ordinary TypeScript user, it is not a feature you will often need to use
+and in fact, you may never have need to use it. However, it is a feature that
+powers a lot of the more clever forms of type inference and type checking that
+you see in the language and in many popular TypeScript libraries.</p>
+<pre class="giallo" style="color: #BFBDB6; background-color: #0D1017;"><code data-lang="typescript"><span class="giallo-l"><span style="color: #FF8F40;">type</span><span style="color: #59C2FF;"> Yan</span><span style="color: #F29668;"> =</span><span style="color: #D2A6FF;"> 123</span><span style="color: #FF8F40;"> extends</span><span style="color: #39BAE6;"> number</span><span style="color: #F29668;"> ?</span><span style="color: #39BAE6;"> true</span><span style="color: #F29668;"> :</span><span style="color: #39BAE6;"> false</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">//   ^? type Yan = true</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">type</span><span style="color: #59C2FF;"> Tan</span><span style="color: #F29668;"> =</span><span style="color: #AAD94C;"> &quot;1&quot;</span><span style="color: #FF8F40;"> extends</span><span style="color: #D2A6FF;"> 1</span><span style="color: #F29668;"> ?</span><span style="color: #39BAE6;"> true</span><span style="color: #F29668;"> :</span><span style="color: #39BAE6;"> false</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">//   ^? type Tan = false</span></span></code></pre>
+<p>In this example, <code>Yan</code> evaluates to the literal boolean type <code>true</code> because
+<code>123</code> extends <code>number</code>, and <code>Tan</code> evaluates to <code>false</code> because a string literal
+type <code>"1"</code> does not extend the <code>number</code> literal <code>1</code>. Numbers are numbers, and
+strings are not numbers.</p>
+<div class="note"><p>These evaluate immediately because the types are concrete -
+TypeScript can resolve them at definition time. Hold onto that thought.</p>
+</div>
+<pre class="giallo" style="color: #BFBDB6; background-color: #0D1017;"><code data-lang="typescript"><span class="giallo-l"><span style="color: #5A6673;font-style: italic;">// a type-level function that takes a single type as an argument</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">// and returns either the type `true` or the type `false`</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">type</span><span style="color: #59C2FF;"> Printable</span><span>&lt;</span><span style="color: #59C2FF;">T</span><span>&gt;</span><span style="color: #F29668;"> =</span><span style="color: #59C2FF;"> T</span><span style="color: #FF8F40;"> extends</span><span style="color: #39BAE6;"> string</span><span style="color: #F29668;"> ?</span><span style="color: #39BAE6;"> true</span><span style="color: #F29668;"> :</span><span style="color: #39BAE6;"> false</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF8F40;">type</span><span style="color: #59C2FF;"> P</span><span style="color: #F29668;"> =</span><span style="color: #59C2FF;"> Printable</span><span>&lt;{ bar</span><span style="color: #F29668;">:</span><span style="color: #39BAE6;"> string</span><span> }&gt;</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">//   ^? type P = false</span></span></code></pre>
+<p><code>P</code> evaluates to <code>false</code> because the object type <code>{ bar: string }</code> is not a
+<code>string</code>. The <code>Printable</code> type is effectively a type-level function that takes a
+single type as an argument and returns another type. As you can see, this is a
+powerful feature. It's a large part of why TypeScript's type system is often
+described as a small functional programming language in its own right.</p>
+<p>Enough background - on to the actual problem.</p>
+<h2 id="typescript-function-overloads-don-t-verify-the-implementation">TypeScript function overloads don't verify the implementation</h2>
+<p>TypeScript supports a form of overloaded functions, which is a common feature in
+many languages that allows you to implement multiple related functions with a
+common name. When you attempt to use that name to call a function, the
+implementation that gets selected is usually determined by the type and/or arity
+(number) of arguments you provide.</p>
+<p>Before we look at TypeScript's version of overloading, let's look at a more
+conventional example from Java of an overloaded method called <code>addToken</code>:</p>
+<pre class="giallo" style="color: #BFBDB6; background-color: #0D1017;"><code data-lang="java"><span class="giallo-l"><span style="color: #FF8F40;">class</span><span style="color: #59C2FF;"> Scanner</span><span> {</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">    // ...</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">    // This implementation takes a single argument of type `TokenType`</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">    private</span><span style="color: #39BAE6;"> void</span><span style="color: #FFB454;"> addToken</span><span>(</span><span style="color: #59C2FF;">TokenType</span><span style="color: #D2A6FF;"> type</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">        // ...</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">    // This implementation takes two arguments of type `TokenType` and `Object`</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">    private</span><span style="color: #39BAE6;"> void</span><span style="color: #FFB454;"> addToken</span><span>(</span><span style="color: #59C2FF;">TokenType</span><span style="color: #D2A6FF;"> type</span><span style="color: #BFBDB6B3;">,</span><span style="color: #59C2FF;"> Object</span><span style="color: #D2A6FF;"> literal</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">        // ...</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF8F40;">    private</span><span style="color: #39BAE6;"> void</span><span style="color: #FFB454;"> scanToken</span><span>() {</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">        // ...</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">        switch</span><span> (c) {</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">            case</span><span style="color: #AAD94C;"> &#39;(&#39;</span><span style="color: #FF8F40;">:</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">                // This calls the first implementation</span></span>
+<span class="giallo-l"><span style="color: #FFB454;">                addToken</span><span>(TokenType</span><span style="color: #BFBDB6B3;">.</span><span>LEFT_PAREN)</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">                break</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">                // ...</span></span>
+<span class="giallo-l"><span>        }</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF8F40;">    private</span><span style="color: #39BAE6;"> void</span><span style="color: #FFB454;"> string</span><span>() {</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">        // ...</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">        // This calls the second implementation</span></span>
+<span class="giallo-l"><span style="color: #FFB454;">        addToken</span><span>(TokenType</span><span style="color: #BFBDB6B3;">.</span><span>STRING</span><span style="color: #BFBDB6B3;">,</span><span> value)</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">        // ...</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p>The Java <code>Scanner</code> class has two implementations of <code>addToken</code>; one that takes a
+single argument and another that takes two. Depending upon the arity and
+argument types, one of the two implementations is selected. The convenience of
+this feature is that it groups implementations that conceptually do the same
+thing, and saves defining separate names like <code>addToken</code> and
+<code>addTokenWithLiteral</code> for all of the possible variants.</p>
+<p>JavaScript does not have function overloads in the sense that Java does, and by
+extension TypeScript also lacks function overloads in the conventional sense. At
+runtime there is no enforcement that functions that take <code>n</code> number of arguments
+must take <code>n</code> number of arguments - a fact that often surprises developers
+coming from other languages. It is quite common in JavaScript APIs to have
+functions that can take a wide variety of types and arity of arguments despite
+the absence of overloads. So what TypeScript allows for is overloading function
+<strong>signatures</strong>, but with a single implementation body:</p>
+<pre class="giallo" style="color: #BFBDB6; background-color: #0D1017;"><code data-lang="typescript"><span class="giallo-l"><span style="color: #5A6673;font-style: italic;">// our Java addToken method example rewritten as function overloads in TypeScript</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">function</span><span style="color: #FFB454;"> addToken</span><span>(</span><span style="color: #D2A6FF;">token</span><span style="color: #F29668;">:</span><span style="color: #59C2FF;"> TokenType</span><span>)</span><span style="color: #F29668;">:</span><span style="color: #39BAE6;"> void</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">function</span><span style="color: #FFB454;"> addToken</span><span>(</span><span style="color: #D2A6FF;">token</span><span style="color: #F29668;">:</span><span style="color: #59C2FF;"> TokenType</span><span style="color: #BFBDB6B3;">,</span><span style="color: #D2A6FF;"> literal</span><span style="color: #F29668;">:</span><span style="color: #39BAE6;"> any</span><span>)</span><span style="color: #F29668;">:</span><span style="color: #39BAE6;"> void</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">function</span><span style="color: #FFB454;"> addToken</span><span>(</span><span style="color: #D2A6FF;">token</span><span style="color: #F29668;">:</span><span style="color: #59C2FF;"> TokenType</span><span style="color: #BFBDB6B3;">,</span><span style="color: #D2A6FF;"> literal</span><span style="color: #F29668;">?:</span><span style="color: #39BAE6;"> any</span><span>)</span><span style="color: #F29668;">:</span><span style="color: #39BAE6;"> void</span><span> {</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">  // ...</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p>With TypeScript function overloads, we define multiple signatures, but only
+implement a single function that must be compatible with all of the
+non-implementing signatures. A frustration with this form of overloads is that
+TypeScript only checks that the implementing signature is compatible with each
+overload - it does not verify that the function body actually satisfies each
+overload individually. They were designed primarily to help describe existing
+behavior of JavaScript APIs rather than help you implement new ones.</p>
+<p>For example, below has an implementing function that will fail to return the
+correct value as indicated by the overload signatures. TypeScript will select
+the second signature overload, but the implementing function will return the
+wrong data type resulting in a runtime type error.</p>
+<pre class="giallo" style="color: #BFBDB6; background-color: #0D1017;"><code data-lang="typescript"><span class="giallo-l"><span style="color: #5A6673;font-style: italic;">// here we have two overloaded function signatures</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">function</span><span style="color: #FFB454;"> yan</span><span>(</span><span style="color: #D2A6FF;">tan</span><span style="color: #F29668;">:</span><span style="color: #39BAE6;"> string</span><span style="color: #BFBDB6B3;">,</span><span style="color: #D2A6FF;"> tethera</span><span style="color: #F29668;">:</span><span style="color: #39BAE6;"> number</span><span>)</span><span style="color: #F29668;">:</span><span style="color: #39BAE6;"> string</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">function</span><span style="color: #FFB454;"> yan</span><span>(</span><span style="color: #D2A6FF;">tan</span><span style="color: #F29668;">:</span><span style="color: #39BAE6;"> number</span><span style="color: #BFBDB6B3;">,</span><span style="color: #D2A6FF;"> tethera</span><span style="color: #F29668;">:</span><span style="color: #39BAE6;"> string</span><span>)</span><span style="color: #F29668;">:</span><span style="color: #39BAE6;"> number</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">// the implementation signature must handle both cases from above,</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">// however, the function body is not verified against individual overload signatures</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">function</span><span style="color: #FFB454;"> yan</span><span>(</span><span style="color: #D2A6FF;">tan</span><span style="color: #F29668;">:</span><span style="color: #39BAE6;"> string</span><span style="color: #F29668;"> |</span><span style="color: #39BAE6;"> number</span><span style="color: #BFBDB6B3;">,</span><span style="color: #D2A6FF;"> tethera</span><span style="color: #F29668;">:</span><span style="color: #39BAE6;"> string</span><span style="color: #F29668;"> |</span><span style="color: #39BAE6;"> number</span><span>)</span><span style="color: #F29668;">:</span><span style="color: #39BAE6;"> string</span><span style="color: #F29668;"> |</span><span style="color: #39BAE6;"> number</span><span> {</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">  // This implementing function body always returns a string,</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">  // which is incorrect for the second overload signature</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">  return</span><span style="color: #AAD94C;"> &quot;&quot;</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"><span>}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">// When using the &#39;yan&#39; function with these arguments TypeScript</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">// will select the second overload signature</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">const</span><span> num</span><span style="color: #F29668;"> =</span><span style="color: #FFB454;"> yan</span><span>(</span><span style="color: #D2A6FF;">0</span><span style="color: #BFBDB6B3;">,</span><span style="color: #AAD94C;"> &quot;&quot;</span><span>)</span><span style="color: #BFBDB6B3;">;</span><span style="color: #5A6673;font-style: italic;"> // Expected return type: number</span></span>
+<span class="giallo-l"><span>num</span><span style="color: #F29668;">.</span><span style="color: #FFB454;">toFixed</span><span>(</span><span style="color: #D2A6FF;">0</span><span>)</span><span style="color: #BFBDB6B3;">;</span><span style="color: #5A6673;font-style: italic;"> // Runtime error: toFixed is not a function</span></span></code></pre><h2 id="can-we-create-our-own-type-safe-function-overloads">Can we create our own type-safe function overloads?</h2>
+<p>TypeScript function overloads are somewhat disappointing because the type
+checker does not actually check our work. But is it possible to create a
+function signature that does check our work? After surveying the features of
+unions and control flow based narrowing, conditional types, and generics, many
+users of the language construct something along these lines:</p>
+<pre class="giallo" style="color: #BFBDB6; background-color: #0D1017;"><code data-lang="typescript"><span class="giallo-l"><span style="color: #5A6673;font-style: italic;">// This is a type-level function and a conditional type that maps</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">// a string literal to a corresponding type</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">type</span><span style="color: #59C2FF;"> PrimitiveMap</span><span>&lt;</span><span style="color: #59C2FF;">T</span><span style="color: #FF8F40;"> extends</span><span style="color: #AAD94C;"> &quot;yan&quot;</span><span style="color: #F29668;"> |</span><span style="color: #AAD94C;"> &quot;tan&quot;</span><span>&gt;</span><span style="color: #F29668;"> =</span><span style="color: #59C2FF;"> T</span><span style="color: #FF8F40;"> extends</span><span style="color: #AAD94C;"> &quot;yan&quot;</span><span style="color: #F29668;"> ?</span><span style="color: #39BAE6;"> string</span><span style="color: #F29668;"> :</span><span style="color: #39BAE6;"> number</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">// This generic function accepts a string literal as an input and returns</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">// the corresponding type mapped from our function `PrimitiveMap`</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">declare function</span><span style="color: #FFB454;"> getValue</span><span>&lt;</span><span style="color: #59C2FF;">T</span><span style="color: #FF8F40;"> extends</span><span style="color: #AAD94C;"> &quot;yan&quot;</span><span style="color: #F29668;"> |</span><span style="color: #AAD94C;"> &quot;tan&quot;</span><span>&gt;(</span><span style="color: #D2A6FF;">key</span><span style="color: #F29668;">:</span><span style="color: #59C2FF;"> T</span><span>)</span><span style="color: #F29668;">:</span><span style="color: #59C2FF;"> PrimitiveMap</span><span>&lt;</span><span style="color: #59C2FF;">T</span><span>&gt;</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF8F40;">const</span><span> stringValue</span><span style="color: #F29668;"> =</span><span style="color: #FFB454;"> getValue</span><span>(</span><span style="color: #AAD94C;">&quot;yan&quot;</span><span>)</span><span style="color: #BFBDB6B3;">;</span><span style="color: #5A6673;font-style: italic;"> // Expected return type: string</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">const</span><span> numberValue</span><span style="color: #F29668;"> =</span><span style="color: #FFB454;"> getValue</span><span>(</span><span style="color: #AAD94C;">&quot;tan&quot;</span><span>)</span><span style="color: #BFBDB6B3;">;</span><span style="color: #5A6673;font-style: italic;"> // Expected return type: number</span></span></code></pre>
+<p><a rel="external" href="https://www.typescriptlang.org/play?ssl=9&amp;ssc=1&amp;pln=23&amp;pc=2#code/PTAEBUAsEsGdTqAhqALgTwA4FNQBtsA3bPUAMwFcA7AY1WgHsrkqATZUGp16eppUhhxpISVKAC2STPBSxUAJ2hUA5vl7YFAtAw5cFC7LEzdlaodgBQF0AAUlE3tGIBZaQB5wobAA9U2NngAInQkKiDQAB9QINQwoIA+UABeCG8-ANZg0PDQAH5QeSVVUAAuUCoKCQAjTQBuS0sQCBh4FQDNaBpyajpGZiQaGmxMVFlCxTN1fy1SJFlmZUwKcTD2Q1QKBSp4VEhcfUNjUxKpTBx2MgUGCVAGLZ7aPmYAA3toKXpXaRfLVmwaHgkIZHn0mKB2qgAGoCCjYTzpfyBGI5CLRWLxBIACgA1th0OVwABKcrvRxfbBuTCeBINSxcHbiIpmGF4OEpCHYaGw7BYkLxIl1UDNACiPhwdGw6y5W2YFnKzNU9KY8gqVVqClZ7NSkK1vIx4UFwrAYol-mlm22aCw2HKlRqmkazQAcgwAO6gN24MT+CSjHQIP0ECQBcR7XC6nmg56WShPfqc7ls7AASSD2BDVDizwRviRWRR8SiMTi4WxeIJEBJdgcTm+1PASQA3pZQAgyKBcfiUslUvzDaAW222wzVTk9QrJiU+wBNMKgQg8oINYegDay0DjnlC5rgG2gADkipUB4Q8CoDFWsFg0BUVCQ1QIAZsB7JdcpHkbB9boAAvo022gDsu3QHs+1LIIiUHH8RxVMMwgnNUHQUDkABYACYV2HdcrVLPUdzAPdhAPe0NVPRALyvG87wfJ9UF0F83wpKkaW-Nt-x-PZrg9KhsA9EUDAYBQ+VdcQPkwYNQylSCGl-IA">Playground link</a></p>
+<div class="note"><p><code>declare</code> marks an
+<a rel="external" href="https://www.typescriptlang.org/docs/handbook/declaration-files/by-example.html">ambient declaration</a> -
+a signature without a function body.</p>
+</div>
+<p>Well this looks very promising! If you inspect the values of <code>stringValue</code> and
+<code>numberValue</code> we get completely different return types from the same function
+depending upon the input value, and they all appear to be correct. This looks a
+lot like TypeScript function overloading!</p>
+<p>This function has a type parameter <code>T</code> constrained to <code>"yan" | "tan"</code>, which is
+used as the type of the single argument <code>key</code>. That type parameter is passed
+into a type-level function called <code>PrimitiveMap</code> as the return type of the
+function. This conditional type will pick the appropriately matching return type
+given the input argument. It would appear that we have successfully recreated
+TypeScript function overloading using other features of the language.</p>
+<p>This is the point of frustration for users because when they turn to
+implementing the function, they find that they cannot implement its body. The
+only way we could implement the body of getValue is if we use the <code>as</code> type
+assertion to cast the return value to <code>PrimitiveMap&lt;T&gt;</code>. Using a type assertion
+defeats the entire purpose of this exercise, which was to create a type-safe
+overload.</p>
+<pre class="giallo" style="color: #BFBDB6; background-color: #0D1017;"><code data-lang="typescript"><span class="giallo-l"><span style="color: #FF8F40;">function</span><span style="color: #FFB454;"> getValue</span><span>&lt;</span><span style="color: #59C2FF;">T</span><span style="color: #FF8F40;"> extends</span><span style="color: #AAD94C;"> &quot;yan&quot;</span><span style="color: #F29668;"> |</span><span style="color: #AAD94C;"> &quot;tan&quot;</span><span>&gt;(</span><span style="color: #D2A6FF;">key</span><span style="color: #F29668;">:</span><span style="color: #59C2FF;"> T</span><span>)</span><span style="color: #F29668;">:</span><span style="color: #59C2FF;"> PrimitiveMap</span><span>&lt;</span><span style="color: #59C2FF;">T</span><span>&gt; {</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">  if</span><span> (key</span><span style="color: #F29668;"> ===</span><span style="color: #AAD94C;"> &quot;yan&quot;</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">    const</span><span> yanValue</span><span style="color: #F29668;">:</span><span style="color: #39BAE6;"> string</span><span style="color: #F29668;"> =</span><span style="color: #AAD94C;"> &quot;Yan value&quot;</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">    return</span><span> yanValue</span><span style="color: #BFBDB6B3;">;</span><span style="color: #5A6673;font-style: italic;"> // Type &#39;string&#39; is not assignable to type &#39;PrimitiveMap&lt;T&gt;&#39;</span></span>
+<span class="giallo-l"><span>  }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF8F40;">  if</span><span> (key</span><span style="color: #F29668;"> ===</span><span style="color: #AAD94C;"> &quot;tan&quot;</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">    const</span><span> tanValue</span><span style="color: #F29668;">:</span><span style="color: #39BAE6;"> number</span><span style="color: #F29668;"> =</span><span style="color: #D2A6FF;"> 42</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">    return</span><span> tanValue</span><span style="color: #BFBDB6B3;">;</span><span style="color: #5A6673;font-style: italic;"> // Type &#39;number&#39; is not assignable to type &#39;PrimitiveMap&lt;T&gt;&#39;</span></span>
+<span class="giallo-l"><span>  }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">  // T is constrained to two values, but TypeScript can&#39;t prove exhaustiveness</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">  // inside a generic body - without this, the function has a missing return error</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">  throw</span><span style="color: #F29668;"> new</span><span style="color: #FFB454;"> Error</span><span>(</span><span style="color: #AAD94C;">&quot;Not implemented&quot;</span><span>)</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p><a rel="external" href="https://www.typescriptlang.org/play/?#code/C4TwDgpgBACgTgSwLYOAgbhAsgQzAHgBUoIAPYCAOwBMBnKAIhB0oagB9HgWGA+KALxRiZCjXpMeUAPxRawRJQDmUAFxRKAVyQAjCHADcAKCMAzTZQDGaAPaUoSiMABqOADaaIREuSp1GzKwcXDy8ABQA1hAg6oQAlOrwyKgY2HhE-ADeRlBQCKZQkdGCAkKSrHFQ2bm5lnbyUIGuHhDq8ooqZQCaLFDo7p4MxjVQcE6acPZNAxAGUAD088Lg0ADk7QjKq3n0lDbAUDi0tAhKlDg6btDANlCgkFCrSShomLgEhLyrOVAAvia5fKFKIgEplbgVKo-Wr1A4Q5qedRaXT6QRQAAsACZhjUxsAJvZ4TM5otlg9Vsi9HBtghdvtDsdTudLtdbvc1s8Um90p9vrl-j9gAALOA2ADuGggEoAonBRXAwgwAHL05BgK5IKgUagMOLGf5AA">Playground link</a></p>
+<div class="note"><p><strong>Did you catch that <code>throw</code> at the end?</strong> Even though <code>T</code> is
+constrained to exactly <code>"yan" | "tan"</code>, TypeScript still requires it because it
+cannot prove all cases are covered inside a generic body. This is itself a
+symptom of the same underlying problem.</p>
+</div>
+<p>The stumbling block here is in the presence of generic types. As of today,
+evaluation of conditional types is deferred until the generic value is resolved,
+which only happens when the function is called. The conditional return type of
+<code>getValue</code> will only be evaluated when the function is called and not when the
+function body is being implemented.</p>
+<p>This isn't an accident. Inside the function body, <code>T</code> is still just a
+placeholder - TypeScript doesn't know what it will be yet. In this example <code>T</code>
+happens to be constrained to just two values, but TypeScript doesn't make
+exceptions for small search spaces - in general a generic can be instantiated
+with anything, and the deferral rule applies uniformly. Waiting until the call
+site, where <code>T</code> is a real concrete type, is by design - reasoning about all
+possible instantiations of <code>T</code> inside a generic body is both complex and
+expensive.</p>
+<p>In TypeScript, you cannot evaluate a conditional type-level function like
+<code>PrimitiveMap</code> if you give it a generic argument because of this fact. A simple
+illustration of this limitation can be seen below. Despite the fact that <code>T</code> has
+a constraint that it extends <code>string</code>, the conditional type remains unevaluated
+within the body of the function <code>tan</code> because <code>T</code> is a generic type.</p>
+<pre class="giallo" style="color: #BFBDB6; background-color: #0D1017;"><code data-lang="typescript"><span class="giallo-l"><span style="color: #FF8F40;">type</span><span style="color: #59C2FF;"> A</span><span style="color: #F29668;"> =</span><span style="color: #39BAE6;"> string</span><span style="color: #FF8F40;"> extends</span><span style="color: #39BAE6;"> string</span><span style="color: #F29668;"> ?</span><span style="color: #39BAE6;"> true</span><span style="color: #F29668;"> :</span><span style="color: #39BAE6;"> false</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">//   ^? type A = true</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF8F40;">function</span><span style="color: #FFB454;"> tan</span><span>&lt;</span><span style="color: #59C2FF;">T</span><span style="color: #FF8F40;"> extends</span><span style="color: #39BAE6;"> string</span><span>&gt;(</span><span style="color: #D2A6FF;">_</span><span style="color: #F29668;">:</span><span style="color: #59C2FF;"> T</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">  type</span><span style="color: #59C2FF;"> B</span><span style="color: #F29668;"> =</span><span style="color: #59C2FF;"> T</span><span style="color: #FF8F40;"> extends</span><span style="color: #39BAE6;"> string</span><span style="color: #F29668;"> ?</span><span style="color: #39BAE6;"> true</span><span style="color: #F29668;"> :</span><span style="color: #39BAE6;"> false</span><span style="color: #BFBDB6B3;">;</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">  //   ^? type B = T extends string ? true : false;</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre><h2 id="so-what-can-we-do">So what can we do?</h2>
+<p>In both the built-in function overloads and our experimentation with combining
+other language features, we have failed to achieve type-safe function overload
+bodies. While we created nice APIs for consumers, implementers get no help from
+the compiler.</p>
+<h3 id="solution-1-implement-separate-functions">Solution 1: Implement separate functions</h3>
+<p>Take a step back. Reconsider the problem the Java case was trying to solve. They
+had separate implementations with a common name, which isn't a feature of
+JavaScript. The alternative is simply to have different names for each
+implementation. So the solution is staring right at us. Have separately named
+function implementations for each of your "overloads."</p>
+<pre class="giallo" style="color: #BFBDB6; background-color: #0D1017;"><code data-lang="typescript"><span class="giallo-l"><span style="color: #FF8F40;">interface</span><span style="color: #59C2FF;"> Yan</span><span> {</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">  /* ... */</span></span>
+<span class="giallo-l"><span>}</span></span>
+<span class="giallo-l"><span style="color: #FF8F40;">interface</span><span style="color: #59C2FF;"> Tan</span><span> {</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">  /* ... */</span></span>
+<span class="giallo-l"><span>}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF8F40;">function</span><span style="color: #FFB454;"> createYan</span><span>()</span><span style="color: #F29668;">:</span><span style="color: #59C2FF;"> Yan</span><span> {</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">  //...</span></span>
+<span class="giallo-l"><span>}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF8F40;">function</span><span style="color: #FFB454;"> createTan</span><span>()</span><span style="color: #F29668;">:</span><span style="color: #59C2FF;"> Tan</span><span> {</span></span>
+<span class="giallo-l"><span style="color: #5A6673;font-style: italic;">  //...</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p>The primary purpose of TypeScript function overloads is to provide a good
+experience for users of existing APIs and potentially for library authors. If
+you are not in one of those categories, then it might be best to avoid the
+complexity of trying to implement function overloads in TypeScript and the
+testing burden it might introduce.</p>
+<h3 id="solution-2-sacrifice-implementer-type-safety-for-the-user-s-benefit">Solution 2: Sacrifice implementer type safety for the user's benefit</h3>
+<p>If you are, say, a library author, it might be nice to have overloading function
+signatures to give your users a pleasant API to use. Here, the advice would be
+to accept that you will have to do extra work to ensure that you are satisfying
+overloaded signatures. This will be in the form of extensive testing. This is a
+corner of the language where you aren't going to get much compiler help, but it
+might be a worthwhile sacrifice for your users.</p>
+<p>Additionally, you could make use of <a rel="external" href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#assertion-functions">runtime assertions</a> or <a rel="external" href="https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates">type guards</a>
+to pass the function arguments to more specialized functions like in solution 1
+example.</p>
+<p>So while I only have partial solutions here, I think the more important takeaway
+is understanding <em>why</em> the obvious combination doesn't work. Deferred
+conditional type evaluation isn't a gap in the language - it's a deliberate
+trade-off, and knowing that saves you from chasing a dead end. Once it clicks,
+the decision becomes straightforward: do you need the unified API surface enough
+to own the testing burden yourself, or can you just have two functions? Most of
+the time, two functions is the right answer anyway.</p>
+<h2 id="further-reading">Further reading</h2>
+<ul>
+<li><a rel="external" href="https://en.wikipedia.org/wiki/Yan_tan_tethera">Yan tan tethera</a> - the counting rhyme used in the examples; got bored of
+foo, bar, baz.</li>
+<li><a rel="external" href="https://github.com/microsoft/TypeScript/issues/33014">Conditional types deferred on generic types</a> - the open TypeScript issue
+tracking this limitation.</li>
+</ul>
+</section>
+</article>
+</main>
+
+    <footer class="footer">
+      <ul class="contacts">
+        <li>
+          <a
+            target="_blank"
+            rel="noopener noreferrer"
+            href="https://bsky.app/profile/m-rutter.com"
+            aria-label="Bluesky"
+          >
+            <img
+              src="/icons/bluesky.svg"
+              alt=""
+              aria-hidden="true"
+              class="icon"
+            />
+            @m-rutter.com
+          </a>
+        </li>
+        <li>
+          <a
+            target="_blank"
+            rel="noopener noreferrer"
+            href="https://github.com/m-rutter"
+            aria-label="GitHub"
+          >
+            <img
+              src="/icons/github.svg"
+              alt=""
+              aria-hidden="true"
+              class="icon"
+            />
+            /m-rutter
+          </a>
+        </li>
+        <li>
+          <img src="/icons/globe.svg" alt="" aria-hidden="true" class="icon" />
+          London-ish, UK
+        </li>
+      </ul>
+    </footer>
+  </body>
+</html>
