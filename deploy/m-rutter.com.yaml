@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: m-rutter.com
+  name: m-rutter-com
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: m-rutter.com
+      app: m-rutter-com
   template:
     metadata:
       labels:
-        app: m-rutter.com
+        app: m-rutter-com
     spec:
       containers:
-        - name: m-rutter.com
+        - name: m-rutter-com
           image: forgejo.elk-ruler.ts.net/m-rutter/m-rutter.com:latest
           imagePullPolicy: Always
           ports:
@@ -29,10 +29,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: m-rutter.com
+  name: m-rutter-com
 spec:
   selector:
-    app: m-rutter.com
+    app: m-rutter-com
   ports:
     - port: 80
       targetPort: 80
@@ -40,7 +40,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: m-rutter.com
+  name: m-rutter-com
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web
     traefik.ingress.kubernetes.io/router.middlewares: default-rate-limit@kubernetescrd
@@ -53,6 +53,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: m-rutter.com
+                name: m-rutter-com
                 port:
                   number: 80
