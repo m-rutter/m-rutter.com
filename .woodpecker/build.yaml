@@ -1,0 +1,29 @@
+when:
+  branch: main
+  event: push
+
+steps:
+  - name: build
+    image: woodpeckerci/plugin-docker-buildx
+    privileged: true
+    settings:
+      registry: forgejo.elk-ruler.ts.net
+      repo: forgejo.elk-ruler.ts.net/m-rutter/m-rutter.com
+      tags: latest
+      mtu: 1450
+      username:
+        from_secret: registry_user
+      password:
+        from_secret: registry_password
+
+  - name: deploy
+    image: bitnami/kubectl
+    environment:
+      HOME: /tmp
+      KUBECONFIG_DATA:
+        from_secret: kubeconfig
+    commands:
+      - echo "$KUBECONFIG_DATA" > /tmp/kubeconfig
+      - kubectl --kubeconfig /tmp/kubeconfig apply -f deploy/m-rutter.com.yaml
+      - kubectl --kubeconfig /tmp/kubeconfig rollout restart
+        deployment/m-rutter.com
