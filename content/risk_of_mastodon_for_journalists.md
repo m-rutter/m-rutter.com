@@ -62,35 +62,22 @@ the service provider is cooperative**:
 > cooldown period in which you cannot migrate again, so be very careful before
 > using this option! - _[Mastodon - 2022-11-07][4]_
 
-Let us imagine a scenario based on real events in the last year. [Stephen
-Bush][5] is a political editor at the New Statesman. He maintains a daily
-morning email newsletter that gets sent from his work email account,
-`stephen.bush@newstatesman.co.uk`. Later, Bush is interviewing for a role as at
-the Financial Times, a role he desires for the [larger dining expense
-budget][6]. He explains that he could write a newsletter for the FT to help
-drive subscriptions. While his current employer owns the list of email
-newsletter subscribers at the New Statesman, he controls a Twitter account,
-`@stephenkb`, with 140k followers that likely strongly overlaps with both his
-current employer's newsletter and general readership. Stephen argues that he can
-drive new subscriptions to both the FT and this new newsletter by soliciting his
-followers on Twitter. Along with other qualities, Bush secures the job and eats
-well at [St John on Marylebone][7].
+Consider the situation of someone like [Stephen Bush][5], a political editor
+who maintains a daily morning email newsletter sent from a work account. His
+employer owns the subscriber list, but he separately controls a Twitter account
+with a large following that overlaps substantially with his readership — and
+that following is his to take when he moves jobs.
 
-Except, Bush does not have a Twitter account, as Twitter collapsed years ago.
-Instead Bush has a Mastodon account that he uses for work,
-`stephen.k.bush@newstatesman.com`, and which he is obligated to use for work
-purposes. It does not quite have as many followers (roughly 90k) as he keeps
-losing his followers with the churn of each job. He lost control of his previous
-follower list at the end of his previous employment.
+Now imagine a journalist, call them Alex, in the same position — except Twitter
+no longer exists. Alex has a Mastodon account for work, `alex@somepublication.com`,
+with roughly 90k followers, and is obligated to use it for work purposes. When
+Alex interviews at a new publication and argues they can drive subscriptions by
+bringing their audience, the claim rings hollow. The follower list lives on their
+current employer's server. Alex has no credible way to guarantee those followers
+migrate.
 
-When Bush interviews for the FT he argues that he could drive more
-subscriptions, but without being able to credibly say he can solicit all of his
-followers at the New Statesman his interviewer finds this argument less
-credible. Bush ends up staying at the New Statesman and cries into an overcooked
-English Breakfast at a nearby greasy spoon at the next Labour Party conference.
-
-Bush's work Mastodon account is as transferable and under his control as his
-work email account is - not at all.
+Alex's work Mastodon account is as transferable and under their control as a
+work email account — not at all.
 
 If something like Mastodon ends up taking the place of Twitter a best case
 scenario for maintaining the status quo is that each journalist self-hosts their
@@ -114,5 +101,3 @@ Twitter/X or existing social media platforms and does not involve employers.
 [3]: https://www.nytimes.com/2022/10/30/technology/elon-musk-twitter-debt.html
 [4]: https://docs.joinmastodon.org/user/moving/
 [5]: https://twitter.com/stephenkb
-[6]: https://www.ft.com/life-arts/lunch-with-the-ft
-[7]: https://stjohnrestaurant.com/a/restaurants/marylebone+

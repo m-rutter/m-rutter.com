@@ -4,7 +4,7 @@ description = "Spoilers: you can't"
 date = "2023-03-19"
 draft = false
 [taxonomies]
-tags = ["typescript", "programming", "types", "java", "type-level-programming"]
+tags = ["typescript", "programming", "types", "type-level-programming"]
 +++
 
 When helping developers new to TypeScript, I encounter several common patterns
@@ -31,8 +31,7 @@ compiler errors.
 ## Some prerequisites
 
 Before we jump in, let's have a quick refresher on three TypeScript features:
-union types, generics, and conditional types. Feel free to skip if you're
-already familiar with these concepts.
+union types, generics, and conditional types.
 
 ### Union types
 
@@ -61,12 +60,12 @@ if (tethera.type === "yan") {
 ```
 
 In the example above, `YanTan` is a union type that can either be a string
-literal type `"tan"` or an object of type [Yan][6]. The `Tethera` type is a
-union of two different object types, distinguished by their common `type`
-property. This latter example is typically called a discriminated union in
-TypeScript, and elsewhere might be called tagged unions, disjoint unions, or sum
-types. TypeScript uses the language's control flow constructs to "narrow" union
-types, as demonstrated with the value `tethera` above.
+literal type `"tan"` or an object of type Yan. The `Tethera` type is a union of
+two different object types, distinguished by their common `type` property. This
+latter example is typically called a discriminated union in TypeScript, and
+elsewhere might be called tagged unions, disjoint unions, or sum types.
+TypeScript uses the language's control flow constructs to "narrow" union types,
+as demonstrated with the value `tethera` above.
 
 For more on narrowing, the TypeScript [handbook chapter on narrowing][1] is a
 must read for new users.
@@ -79,14 +78,14 @@ those different types while preserving type information of the inputs in their
 outputs.
 
 ```ts
-function map<T, U>(type: T[], callback: (t: T) => U): U[] {
+function map<T, U>(arr: T[], callback: (t: T) => U): U[] {
   // ...
 }
 
 const yan = map(
   //    ^? const yan: string[]
   [2, ""],
-  (value) => value.toString()
+  (value) => value.toString(),
   //  ^? (parameter) value: number | string
 );
 ```
@@ -197,8 +196,8 @@ thing, and saves defining separate names like `addToken` and
 JavaScript does not have function overloads in the sense that Java does, and by
 extension TypeScript also lacks function overloads in the conventional sense. At
 runtime there is no enforcement that functions that take `n` number of arguments
-must take `n` number of arguments - a fact some people unfamiliar with
-JavaScript often find surprising. It is quite common in JavaScript APIs to have
+must take `n` number of arguments - a fact that often surprises developers
+coming from other languages. It is quite common in JavaScript APIs to have
 functions that can take a wide variety of types and arity of arguments despite
 the absence of overloads. So what TypeScript allows for is overloading function
 **signatures**, but with a single implementation body:
@@ -285,9 +284,10 @@ TypeScript function overloading using other features of the language.
 
 This is the point of frustration for users because when they turn to
 implementing the function, they find that they cannot implement its body. The
-only way we could implement the body of getValue is if we assert that the return
-value is `PrimitiveMap<T>`. Asserting this defeats the entire purpose of this
-exercise, which was to create a type-safe overload.
+only way we could implement the body of getValue is if we use the `as` type
+assertion to cast the return value to `PrimitiveMap<T>`. Using a type assertion
+defeats the entire purpose of this exercise, which was to create a type-safe
+overload.
 
 ```ts
 function getValue<T extends "yan" | "tan">(key: T): PrimitiveMap<T> {
@@ -348,9 +348,9 @@ function tan<T extends string>(_: T) {
 ## So what can we do?
 
 In both the built-in function overloads and our experimentation with combining
-other language features, we have failed to achieve type-safe overloading
-function bodies. While we created nice APIs for consumers, implementers get no
-help from the compiler.
+other language features, we have failed to achieve type-safe function overload
+bodies. While we created nice APIs for consumers, implementers get no help from
+the compiler.
 
 ### Solution 1: Implement separate functions
 
@@ -377,13 +377,13 @@ function createTan(): Tan {
 }
 ```
 
-Primarily the purpose of TypeScript function overloads is to provide a good
+The primary purpose of TypeScript function overloads is to provide a good
 experience for users of existing APIs and potentially for library authors. If
 you are not in one of those categories, then it might be best to avoid the
 complexity of trying to implement function overloads in TypeScript and the
 testing burden it might introduce.
 
-### Solution 2: Sacrifice type safety - for the user's benefit
+### Solution 2: Sacrifice implementer type safety for the user's benefit
 
 If you are, say, a library author, it might be nice to have overloading function
 signatures to give your users a pleasant API to use. Here, the advice would be
@@ -406,6 +406,8 @@ the time, two functions is the right answer anyway.
 
 ## Further reading
 
+- [Yan tan tethera][6] - the counting rhyme used in the examples; got bored of
+  foo, bar, baz.
 - [Conditional types deferred on generic types][7] - the open TypeScript issue
   tracking this limitation.
 
