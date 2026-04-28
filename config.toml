@@ -1,6 +1,6 @@
 # The URL the site will be built for
 base_url = "https://m-rutter.com"
-title = "Some Michael"
+title = "Some Michael Rutter"
 author = "Michael Rutter"
 description = "Software Developer, Philosophy PhD Dropout, British, American, Coffee Addict."
 default_language = "en"
