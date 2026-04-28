@@ -1,22 +1,20 @@
-{% extends "index.html" %}
-
-{% block title %} {{ config.title }} => categories {% endblock title %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %} {{ config.title }} => categories {%
+endblock title %} {% block content %}
 <article>
-    <header>
-        <h2>categories</h2>
-    </header>
-    <section>
+  <header>
+    <h2>tags</h2>
+  </header>
+  <section>
     {% if terms %}
-        <ul>
-            {% for term in terms %}
-                <li>
-                    <a href="{{ term.permalink }}">{{ term.name }}</a> ({{ term.pages | length }})
-                </li>
-            {% endfor %}
-        </ul>
+    <ul>
+      {% for term in terms %}
+      <li>
+        <a href="{{ term.permalink }}">{{ term.name }}</a> ({{ term.pages |
+        length }})
+      </li>
+      {% endfor %}
+    </ul>
     {% endif %}
-    </section>
+  </section>
 </article>
 {% endblock content %}

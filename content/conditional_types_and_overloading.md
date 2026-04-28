@@ -86,7 +86,7 @@ function map<T, U>(type: T[], callback: (t: T) => U): U[] {
 const yan = map(
   //    ^? const yan: string[]
   [2, ""],
-  (value) => value.toString(),
+  (value) => value.toString()
   //  ^? (parameter) value: number | string
 );
 ```

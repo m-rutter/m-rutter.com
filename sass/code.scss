@@ -1,20 +1,13 @@
 code,
 pre {
-    font-family:
-        Berkeley Mono,
-        Menlo,
-        Monaco,
-        Consolas,
-        "Liberation Mono",
-        "Courier New",
-        monospace;
+  font-family: var(--font-mono);
 }
 
 code {
-    word-wrap: break-word;
-    font-size: 100%;
-    letter-spacing: 0px;
-    line-height: 1.1rem;
+  word-wrap: break-word;
+  font-size: 100%;
+  letter-spacing: 0px;
+  line-height: 1.5;
 }
 
 p,
@@ -30,31 +23,27 @@ li,
 blockquote,
 figure,
 hr {
-    > code {
-        padding-top: 0.125rem;
-        padding-bottom: 0.125rem;
-        padding-left: 0.25rem;
-        padding-right: 0.25rem;
-        border-radius: 3px;
-        background-color: #313135;
-
-        @media (prefers-color-scheme: light) {
-            background-color: #eaeaea;
-        }
-    }
+  > code {
+    padding-top: 0.125rem;
+    padding-bottom: 0.125rem;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+    border-radius: 3px;
+    background-color: var(--color-code-bg);
+  }
 }
 
 pre {
-    display: block;
-    padding: 1rem;
-    overflow-x: auto;
-    border-radius: 8px;
+  display: block;
+  padding: 1rem;
+  overflow-x: auto;
+  border-radius: 8px;
 }
 
 .highlight {
-    margin-bottom: 1rem;
-    border-radius: 4px;
+  margin-bottom: 1rem;
+  border-radius: 8px;
 }
 .highlight pre {
-    margin-bottom: 0;
+  margin-bottom: 0;
 }

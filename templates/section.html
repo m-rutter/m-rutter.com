@@ -1,12 +1,9 @@
-{% extends "index.html" %} 
-
-{% block title %} {{ config.title }} => {{ section.title }} {% endblock title %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %} {{ config.title }} => {{
+section.title }} {% endblock title %} {% block content %}
 <article>
-  <header>
-    <h2 class="post-title f2 f1-l">{{ section.title }}</h2>
+  <header class="post-header">
+    <h1>{{ section.title }}</h1>
   </header>
-  <section>{{ section.content | safe }}</section>
+  <section class="prose">{{ section.content | safe }}</section>
 </article>
 {% endblock content %}

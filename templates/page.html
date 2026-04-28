@@ -1,37 +1,51 @@
-{% extends "index.html" %} {% block title %} {{ config.title }} => {{ page.title
-}} {% endblock title %} {% block content %}
+{% extends "base.html" %}
+{% block title %}
+  {{ config.title }} => {{ page.title }}
+{% endblock title %} {% block meta %}
+<meta name="description" content="{{ page.description }}" />
+<meta property="og:title" content="{{ page.title }}" />
+<meta property="og:description" content="{{ page.description }}" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="{{ page.permalink }}" />
+<meta property="og:site_name" content="{{ config.title }}" />
+{% endblock meta %} {% block content %}
 <article>
-    <header class="post-header">
-        <a href="{{page.permalink}}">
-            <h1 class="post-title f3">{{ page.title }}</h1>
-        </a>
-        <h4 class="post-title f5">{{ page.description }}</h4>
-        <section class="post-meta">
-            <dl class="slab">
-                <dt>Reading time</dt>
-                <dd>{{ page.reading_time }} minutes</dd>
-            </dl>
+  <header class="post-header post-header--article">
+    <h1>{{ page.title }}</h1>
+    <p class="post-description">{{ page.description }}</p>
+    <section class="post-meta">
+      <dl class="slab">
+        <dt>Reading time</dt>
+        <dd>{{ page.reading_time }} minutes</dd>
+      </dl>
 
-            <dl class="slab">
-                <dt>Published</dt>
-                <dd>
-                    <time datetime="{{ page.date }}"
-                        >{{ page.date | date(format="%d %b %Y") }}</time
-                    >
-                </dd>
-            </dl>
-            {% if page.updated %}
-            <dl class="slab">
-                <dt>Last updated</dt>
-                <dd>
-                    <time datetime="{{ page.updated }}"
-                        >{{ page.updated | date(format="%d %b %Y") }}</time
-                    >
-                </dd>
-            </dl>
-            {% endif %}
-        </section>
-    </header>
-    <section>{{ page.content | safe }}</section>
+      <dl class="slab">
+        <dt>Published</dt>
+        <dd>
+          <time datetime="{{ page.date }}"
+            >{{ page.date | date(format="%d %b %Y") }}</time
+          >
+        </dd>
+      </dl>
+      {% if page.updated %}
+      <dl class="slab">
+        <dt>Last updated</dt>
+        <dd>
+          <time datetime="{{ page.updated }}"
+            >{{ page.updated | date(format="%d %b %Y") }}</time
+          >
+        </dd>
+      </dl>
+      {% endif %}
+    </section>
+    {% if page.taxonomies.tags %}
+    <p class="post-tags">
+      {% for tag in page.taxonomies.tags %}
+      <a href="/tags/{{ tag | slugify }}/" class="tag">#{{ tag }}</a>
+      {% endfor %}
+    </p>
+    {% endif %}
+  </header>
+  <section class="prose">{{ page.content | safe }}</section>
 </article>
 {% endblock content %}

@@ -6,11 +6,8 @@ description = "Software Developer, Philosophy PhD Dropout, British, American, Co
 default_language = "en"
 output_dir = "public"
 compile_sass = true
-generate_feeds = true
-build_search_index = true
 generate_sitemap = true
 generate_robots_txt = true
-feed_filenames = ["atom.xml", "rss.xml"]
 feed_limit = 20
 
 taxonomies = [
