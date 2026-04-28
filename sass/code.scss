@@ -28,7 +28,7 @@ hr {
     padding-bottom: 0.125rem;
     padding-left: 0.25rem;
     padding-right: 0.25rem;
-    border-radius: 3px;
+    border-radius: 0;
     background-color: var(--color-code-bg);
   }
 }
@@ -37,12 +37,14 @@ pre {
   display: block;
   padding: 1rem;
   overflow-x: auto;
-  border-radius: 8px;
+  border-radius: 0;
+  font-size: clamp(0.75rem, 2.5vw, 0.9rem);
 }
 
 .highlight {
   margin-bottom: 1rem;
-  border-radius: 8px;
+  border-radius: 0;
+  overflow-x: auto;
 }
 .highlight pre {
   margin-bottom: 0;

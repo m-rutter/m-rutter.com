@@ -16,6 +16,5 @@ taxonomies = [
 
 [extra]
 
-[markdown]
-highlight_code = true
-highlight_theme = "ayu-mirage"
+[markdown.highlighting]
+theme = "ayu-dark"
