@@ -2,7 +2,7 @@
 base_url = "https://m-rutter.com"
 title = "Some Michael Rutter"
 author = "Michael Rutter"
-description = "Software Developer, Philosophy PhD Dropout, British, American, Coffee Addict."
+description = "Michael Rutter's personal website - programming, philosophy, and games."
 default_language = "en"
 output_dir = "public"
 compile_sass = true
