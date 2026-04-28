@@ -25,5 +25,4 @@ steps:
     commands:
       - echo "$KUBECONFIG_DATA" > /tmp/kubeconfig
       - kubectl --kubeconfig /tmp/kubeconfig apply -f deploy/m-rutter.com.yaml
-      - kubectl --kubeconfig /tmp/kubeconfig rollout restart
-        deployment/m-rutter.com
+      - kubectl --kubeconfig /tmp/kubeconfig rollout restart deployment/m-rutter-com
