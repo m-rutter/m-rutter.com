@@ -92,9 +92,12 @@ As a relatively recent adopter of BlueSky I should say that while BlueSky's
 ATProto is a fediverse type project the specific problem raised here does not
 apply. The way that domain handles work there is that they leverage existing DNS
 infrastructure to allow users to retain their account but "borrow" a domain from
-their employer without ceding control. There might still be questions around
-account portability, but that is certainly no worse than the status quo with
-Twitter/X or existing social media platforms and does not involve employers.
+their employer without ceding control. Beyond handles, ATProto's Personal Data
+Server (PDS) model goes further. Your identity is anchored to a DID
+(Decentralised Identifier) that is independent of any particular host, so in
+principle you can migrate from one PDS to another, including self-hosting, and
+take your full history and your followers with you. Whether this proves out is
+not yet fully clear to me.
 
 [1]: https://twitter.com/cathynewman/status/1589384980169625600
 [2]: https://en.wikipedia.org/wiki/Fediverse
